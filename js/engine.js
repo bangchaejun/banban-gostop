@@ -1,5 +1,5 @@
 /**
- * BANBAN GO-STOP - Money Betting System & Step-by-Step Game Engine
+ * BANBAN GO-STOP - Human-like Rhythm & Authentic Go-Stop Timing Engine
  */
 
 class GoStopEngine {
@@ -22,8 +22,7 @@ class GoStopEngine {
     this.playerScore = 0;
     this.aiScore = 0;
 
-    // 💰 실제 머니 베팅 시스템
-    this.pointBet = 100; // 점당 100원 (기본), 500원, 1,000원
+    this.pointBet = 100;
     this.playerMoney = parseInt(localStorage.getItem('banban_player_money') || '1000000', 10);
     this.aiMoney = parseInt(localStorage.getItem('banban_ai_money') || '1000000', 10);
 
@@ -69,7 +68,7 @@ class GoStopEngine {
     this.isGameOver = false;
     this.isProcessing = false;
 
-    // 바닥 8장 깔기
+    // 바닥 8장
     for (let i = 0; i < 8; i++) {
       const card = this.deck.pop();
       if (card.month === 0) {
@@ -89,7 +88,7 @@ class GoStopEngine {
     this.sortHand(this.aiHand);
 
     if (this.onEvent) {
-      this.onEvent('deal', { message: `반반이 맞고 판돈(점당 ${this.pointBet.toLocaleString()}원) 세팅 완료! 🎴` });
+      this.onEvent('deal', { message: `화투패 분배 완료! (판돈: 점당 ${this.pointBet.toLocaleString()}원) 🎴` });
     }
   }
 
@@ -105,7 +104,7 @@ class GoStopEngine {
 
     this.isProcessing = true;
     const playedCard = this.playerHand.splice(handIdx, 1)[0];
-    await this.executeTurnStepByStep('player', playedCard, targetMatchId);
+    await this.executeTurnWithHumanTiming('player', playedCard, targetMatchId);
     this.isProcessing = false;
   }
 
@@ -113,9 +112,16 @@ class GoStopEngine {
     if (this.currentTurn !== 'ai' || this.isGameOver || this.isProcessing) return;
 
     this.isProcessing = true;
+    
+    // 🧠 AI 생각하는 시간 (1.2초의 인간다운 딜레이)
+    if (this.onEvent) {
+      this.onEvent('aiThinking', { message: '반반이가 칠 패를 고르는 중이다 멍멍... 🐾' });
+    }
+    await new Promise(r => setTimeout(r, 1200));
+
     const choice = this.decideAiCard();
     const playedCard = this.aiHand.splice(choice.handIdx, 1)[0];
-    await this.executeTurnStepByStep('ai', playedCard, choice.targetMatchId);
+    await this.executeTurnWithHumanTiming('ai', playedCard, choice.targetMatchId);
     this.isProcessing = false;
   }
 
@@ -154,18 +160,21 @@ class GoStopEngine {
     return bestChoice;
   }
 
-  // 🚀 역동적 비행과 타격이 적용된 단계별 턴 실행
-  async executeTurnStepByStep(actor, playedCard, targetMatchId) {
+  // 🎴 한게임 맞고 수준의 인간적인 리듬 타이밍 턴 실행기
+  async executeTurnWithHumanTiming(actor, playedCard, targetMatchId) {
     const targetCaptured = actor === 'player' ? this.playerCaptured : this.aiCaptured;
     const opponentCaptured = actor === 'player' ? this.aiCaptured : this.playerCaptured;
 
     let turnLogs = [];
     let capturedThisTurn = [];
 
-    // 1단계: AI 턴일 때만 손패 비행 이벤트 발생 (플레이어는 클릭 시점에 이미 비행 완료)
+    // 1단계: 손패 비행 (AI일 때만 이벤트 호출, 유저는 클릭 시 이미 비행 완료)
     if (actor === 'ai' && this.onEvent) {
       await this.onEvent('cardPlayed', { actor, card: playedCard });
     }
+
+    // 🌟 손패가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (450ms)
+    await new Promise(r => setTimeout(r, 450));
 
     const month = playedCard.month;
     let handMatches = (month > 0 && this.groundCards[month]) ? this.groundCards[month] : [];
@@ -180,8 +189,7 @@ class GoStopEngine {
       turnLogs.push('바닥 3장 묶음 모두 획득!');
     }
 
-    // 2단계: 덱에서 1장 뒤집기
-    await new Promise(r => setTimeout(r, 300));
+    // 2단계: 덱에서 1장 뒤집기 비행
     const deckCard = this.deck.length > 0 ? this.deck.pop() : null;
     let matchedFromDeck = null;
     let isBbuck = false;
@@ -193,17 +201,18 @@ class GoStopEngine {
         await this.onEvent('deckFlipped', { actor, card: deckCard });
       }
 
+      // 🌟 덱 카드가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (450ms)
+      await new Promise(r => setTimeout(r, 450));
+
       const deckMonth = deckCard.month;
       let deckMatches = (deckMonth > 0 && this.groundCards[deckMonth]) ? this.groundCards[deckMonth] : [];
 
-      // 뻑 판정
       if (deckMonth === month && matchedFromHand && deckMatches.length === 0) {
         isBbuck = true;
         this.groundCards[month].push(playedCard, matchedFromHand, deckCard);
         turnLogs.push(`${actor === 'player' ? '마스터님' : '반반이'} 뻑!! 😱`);
         if (window.goStopAudio) window.goStopAudio.playSpecial('bbuck');
       } 
-      // 쪽 판정
       else if (handMatches.length === 0 && deckMonth === month) {
         isJjok = true;
         capturedThisTurn.push(playedCard, deckCard);
@@ -298,7 +307,8 @@ class GoStopEngine {
       } else {
         this.currentTurn = actor === 'player' ? 'ai' : 'player';
         if (this.currentTurn === 'ai') {
-          setTimeout(() => this.executeAiTurn(), 800);
+          // AI 턴 시작
+          setTimeout(() => this.executeAiTurn(), 600);
         }
       }
     }
@@ -358,7 +368,6 @@ class GoStopEngine {
     }
   }
 
-  // 💰 스톱 선언 및 머니 정산
   declareStop(actor) {
     if (window.goStopAudio) window.goStopAudio.playStop();
     this.isGameOver = true;
@@ -392,7 +401,6 @@ class GoStopEngine {
     const finalCalculatedScore = Math.max(7, winnerScore) * multiplier;
     const totalWonMoney = finalCalculatedScore * this.pointBet;
 
-    // 머니 이동
     if (actor === 'player') {
       const takeMoney = Math.min(this.aiMoney, totalWonMoney);
       this.playerMoney += takeMoney;
