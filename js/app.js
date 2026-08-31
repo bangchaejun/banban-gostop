@@ -1,5 +1,5 @@
 /**
- * BANBAN MATGO - Realistic 3D Card Flip, Smooth Choreography & Overlap Physics Engine
+ * BANBAN MATGO - Commercial Grade Authentic Go-Stop Controller (v20.0)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,14 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // DOM Elements
   const appContainer = document.querySelector('.gostop-app');
-  const groundGrid = document.getElementById('groundGrid');
+  const groundFreeField = document.getElementById('groundFreeField');
   const userHandRow = document.getElementById('userHandRow');
   const aiHandRow = document.getElementById('aiHandRow');
   const aiAvatar = document.getElementById('aiAvatar');
   const centerDeck = document.getElementById('centerDeck');
   const deckCount = document.getElementById('deckCount');
   const actionBanner = document.getElementById('actionBanner');
-  const flyLayer = document.getElementById('flyLayer');
 
   const selectBet = document.getElementById('selectBet');
   const userMoney = document.getElementById('userMoney');
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let pendingPlayCardId = null;
 
-  // 🎴 화투패 DOM 생성
+  // 🎴 화투패 DOM 요소 생성
   function createCardElement(card, isBack = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `hwatu-card ${isBack ? 'card-back' : ''}`;
@@ -94,19 +93,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return cardEl;
   }
 
-  // ✨ 바닥 매칭 하이라이트
+  // ✨ 바닥 매칭 하이라이트 동기화
   function highlightMatchesOnGround(month) {
     clearGroundHighlights();
     if (!month || month === 0) return;
 
-    const matchedCards = groundGrid.querySelectorAll(`.hwatu-card[data-month="${month}"]`);
+    const matchedCards = groundFreeField.querySelectorAll(`.hwatu-card[data-month="${month}"]`);
     matchedCards.forEach(cardEl => {
       cardEl.classList.add('match-highlight');
     });
   }
 
   function clearGroundHighlights() {
-    const highlighted = groundGrid.querySelectorAll('.match-highlight');
+    const highlighted = groundFreeField.querySelectorAll('.match-highlight');
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
@@ -120,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => wave.remove(), 400);
   }
 
-  // 🌟 거대 붓글씨 임팩트 배너
+  // 🌟 거대 붓글씨 임팩트 배너 (쪽, 따닥, 뻑, 쓸 등)
   function triggerGrandEffect(text) {
     const banner = document.createElement('div');
     banner.className = 'grand-effect-banner';
@@ -131,9 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 🚀 1. 손패 비행 (손목 스냅 3D 아크 & 포개짐 슬램)
   async function performHandCardFlight(originType, targetMonth, card, customOriginRect = null) {
-    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
-    const existingCards = slotEl.querySelectorAll('.hwatu-card');
-    const destRect = slotEl.getBoundingClientRect();
+    const clusterEl = groundFreeField.querySelector(`.ground-cluster[data-month="${targetMonth}"]`);
+    const destRect = clusterEl ? clusterEl.getBoundingClientRect() : groundFreeField.getBoundingClientRect();
+    const existingCards = clusterEl ? clusterEl.querySelectorAll('.hwatu-card') : [];
 
     let originRect;
     let isBack = false;
@@ -153,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
 
-    // 출발 위치에서 손을 높이 들어 올린 3D 붕 뜸
     flyingCard.style.position = 'fixed';
     flyingCard.style.left = `${originRect.left}px`;
     flyingCard.style.top = `${originRect.top}px`;
@@ -164,26 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
     flyingCard.style.transition = 'none';
     document.body.appendChild(flyingCard);
 
-    // 포개짐 오프셋 계산
     const overlapCount = existingCards.length;
-    const offsetX = overlapCount > 0 ? (overlapCount * 10) : 0;
-    const offsetY = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const offsetX = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const offsetY = overlapCount > 0 ? (overlapCount * 14) : 0;
     const targetRotate = overlapCount > 0 ? (overlapCount % 2 === 0 ? 6 : -6) : 0;
 
-    const targetX = destRect.left + 2 + offsetX;
-    const targetY = destRect.top + 2 + offsetY;
+    const targetX = destRect.left + offsetX;
+    const targetY = destRect.top + offsetY;
 
     await new Promise(r => requestAnimationFrame(r));
     flyingCard.style.transition = 'all 0.45s cubic-bezier(0.12, 0.88, 0.28, 1.05)';
     flyingCard.style.left = `${targetX}px`;
     flyingCard.style.top = `${targetY}px`;
-    flyingCard.style.width = '64px';
-    flyingCard.style.height = '100px';
+    flyingCard.style.width = '68px';
+    flyingCard.style.height = '108px';
     flyingCard.style.transform = `scale(1.0) rotate(${targetRotate}deg) translateY(0px)`;
 
     await new Promise(r => setTimeout(r, 450));
 
-    // 착지 순간 바닥 카드 반동 + 슬램 사운드 + 충격파
     if (existingCards.length > 0) {
       existingCards.forEach(c => {
         c.classList.remove('card-impact-jolt');
@@ -192,8 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const centerX = targetX + 32;
-    const centerY = targetY + 50;
+    const centerX = targetX + 34;
+    const centerY = targetY + 54;
     createSlamShockwave(centerX, centerY);
 
     if (window.goStopAudio) window.goStopAudio.playCardSlap(1.35);
@@ -203,14 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
     flyingCard.remove();
   }
 
-  // 🎴 2. 중앙 덱 3D 뒤집기(Card Flip) 비행 연출
+  // 🎴 2. 중앙 덱 3D 뒤집기(Card Flip) 비행
   async function performDeckFlipFlight(targetMonth, card) {
     const originRect = centerDeck.getBoundingClientRect();
-    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
-    const existingCards = slotEl.querySelectorAll('.hwatu-card');
-    const destRect = slotEl.getBoundingClientRect();
+    const clusterEl = groundFreeField.querySelector(`.ground-cluster[data-month="${targetMonth}"]`);
+    const destRect = clusterEl ? clusterEl.getBoundingClientRect() : groundFreeField.getBoundingClientRect();
+    const existingCards = clusterEl ? clusterEl.querySelectorAll('.hwatu-card') : [];
 
-    // 3D Flip 컨테이너 생성
     const flipWrap = document.createElement('div');
     flipWrap.className = 'flip-card-3d-wrap';
     flipWrap.style.left = `${originRect.left}px`;
@@ -219,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const flipInner = document.createElement('div');
     flipInner.className = 'flip-card-inner';
-    flipInner.style.transform = 'rotateY(180deg)'; // 시작은 뒷면!
+    flipInner.style.transform = 'rotateY(180deg)';
 
     const cardBack = document.createElement('div');
     cardBack.className = 'flip-card-back';
@@ -235,26 +230,23 @@ document.addEventListener('DOMContentLoaded', () => {
     flipWrap.appendChild(flipInner);
     document.body.appendChild(flipWrap);
 
-    // 포개짐 오프셋 계산
     const overlapCount = existingCards.length;
-    const offsetX = overlapCount > 0 ? (overlapCount * 10) : 0;
-    const offsetY = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const offsetX = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const offsetY = overlapCount > 0 ? (overlapCount * 14) : 0;
     const targetRotate = overlapCount > 0 ? (overlapCount % 2 === 0 ? 6 : -6) : 0;
 
-    const targetX = destRect.left + 2 + offsetX;
-    const targetY = destRect.top + 2 + offsetY;
+    const targetX = destRect.left + offsetX;
+    const targetY = destRect.top + offsetY;
 
     await new Promise(r => requestAnimationFrame(r));
-    // 공중으로 떠오르며 3D 뒤집어지기 실행!
     flipWrap.style.transition = 'all 0.52s cubic-bezier(0.15, 0.85, 0.35, 1.1)';
     flipWrap.style.left = `${targetX}px`;
     flipWrap.style.top = `${targetY}px`;
     flipWrap.style.transform = `scale(1.0) rotate(${targetRotate}deg) translateY(0px)`;
-    flipInner.style.transform = 'rotateY(0deg)'; // 앞면으로 촤르륵 까짐!
+    flipInner.style.transform = 'rotateY(0deg)';
 
     await new Promise(r => setTimeout(r, 520));
 
-    // 착지 순간
     if (existingCards.length > 0) {
       existingCards.forEach(c => {
         c.classList.remove('card-impact-jolt');
@@ -263,8 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const centerX = targetX + 32;
-    const centerY = targetY + 50;
+    const centerX = targetX + 34;
+    const centerY = targetY + 54;
     createSlamShockwave(centerX, centerY);
 
     if (window.goStopAudio) window.goStopAudio.playCardSlap(1.4);
@@ -278,9 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function performCaptureAnimation(actor, month, cards) {
     if (!cards || cards.length === 0) return;
 
-    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${month}"]`);
-    if (!slotEl) return;
-    const fromRect = slotEl.getBoundingClientRect();
+    const clusterEl = groundFreeField.querySelector(`.ground-cluster[data-month="${month}"]`);
+    const fromRect = clusterEl ? clusterEl.getBoundingClientRect() : groundFreeField.getBoundingClientRect();
 
     const targetRow = actor === 'player' ? document.getElementById('userCapturedRow') : document.getElementById('aiCapturedRow');
     const toRect = targetRow.getBoundingClientRect();
@@ -313,11 +304,25 @@ document.addEventListener('DOMContentLoaded', () => {
     deckCount.textContent = engine.deck.length;
   }
 
-  // 내 손패 렌더링
+  // 내 손패 렌더링 (부채꼴 겹침 & 먹을 수 있는 패 상시 반짝임 가이드)
   function renderUserHand() {
     userHandRow.innerHTML = '';
-    engine.playerHand.forEach(card => {
+    const activeGroundMonths = new Set();
+    Object.keys(engine.groundCards).forEach(m => {
+      if (engine.groundCards[m] && engine.groundCards[m].length > 0) {
+        activeGroundMonths.add(parseInt(m, 10));
+      }
+    });
+
+    engine.playerHand.forEach((card, idx) => {
       const el = createCardElement(card);
+      
+      // ✨ 바닥에 짝이 있으면 상시 황금 펄스 링 부여!
+      if (activeGroundMonths.has(card.month)) {
+        el.classList.add('can-hit-hint');
+      }
+
+      el.style.zIndex = `${idx + 1}`;
       el.addEventListener('mouseenter', () => highlightMatchesOnGround(card.month));
       el.addEventListener('mouseleave', clearGroundHighlights);
       el.addEventListener('click', () => onUserCardClick(card, el));
@@ -325,54 +330,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // AI 손패 렌더링
+  // AI 손패 렌더링 (부채꼴 겹침)
   function renderAiHand() {
     aiHandRow.innerHTML = '';
-    engine.aiHand.forEach(card => {
+    engine.aiHand.forEach((card, idx) => {
       const el = createCardElement(card, true);
+      el.style.zIndex = `${idx + 1}`;
       aiHandRow.appendChild(el);
     });
   }
 
-  // 바닥패 렌더링
+  // 🌿 바닥패 렌더링 (12개 빈 박스 격자 폐기 ➡️ 실제 존재하는 패들만 자연스럽게 무리 배치)
   function renderGround() {
-    groundGrid.innerHTML = '';
+    groundFreeField.innerHTML = '';
     for (let m = 1; m <= 12; m++) {
-      const slot = document.createElement('div');
-      slot.className = 'ground-slot';
-      slot.dataset.month = m;
-
       const cardsInMonth = engine.groundCards[m] || [];
-      cardsInMonth.forEach((card, idx) => {
-        const cardEl = createCardElement(card);
-        if (idx > 0) {
-          cardEl.style.transform = `translate(${idx * 8}px, ${idx * 8}px) rotate(${idx % 2 === 0 ? 4 : -4}deg)`;
-        }
-        slot.appendChild(cardEl);
-      });
+      if (cardsInMonth.length > 0) {
+        const cluster = document.createElement('div');
+        cluster.className = 'ground-cluster';
+        cluster.dataset.month = m;
 
-      groundGrid.appendChild(slot);
+        cardsInMonth.forEach((card, idx) => {
+          const cardEl = createCardElement(card);
+          if (idx > 0) {
+            cardEl.style.transform = `translate(${idx * 12}px, ${idx * 14}px) rotate(${idx % 2 === 0 ? 6 : -6}deg)`;
+          }
+          cluster.appendChild(cardEl);
+        });
+
+        groundFreeField.appendChild(cluster);
+      }
     }
   }
 
-  // 획득패 렌더링
+  // 📚 획득패 적재함 렌더링 (Stacked Pile)
   function renderCaptured() {
-    const renderGroup = (container, cards) => {
+    const renderStack = (container, cards) => {
       container.innerHTML = '';
-      cards.forEach((card) => {
-        container.appendChild(createCardElement(card));
+      cards.forEach((card, idx) => {
+        const cardEl = createCardElement(card);
+        cardEl.style.left = `${Math.min(idx * 6, 24)}px`;
+        cardEl.style.top = `${Math.min(idx * 3, 12)}px`;
+        cardEl.style.zIndex = `${idx + 1}`;
+        container.appendChild(cardEl);
       });
     };
 
-    renderGroup(userGwang, engine.playerCaptured.gwang);
-    renderGroup(userAnimal, engine.playerCaptured.animal);
-    renderGroup(userRibbon, engine.playerCaptured.ribbon);
-    renderGroup(userJunk, engine.playerCaptured.junk);
+    renderStack(userGwang, engine.playerCaptured.gwang);
+    renderStack(userAnimal, engine.playerCaptured.animal);
+    renderStack(userRibbon, engine.playerCaptured.ribbon);
+    renderStack(userJunk, engine.playerCaptured.junk);
 
-    renderGroup(aiGwang, engine.aiCaptured.gwang);
-    renderGroup(aiAnimal, engine.aiCaptured.animal);
-    renderGroup(aiRibbon, engine.aiCaptured.ribbon);
-    renderGroup(aiJunk, engine.aiCaptured.junk);
+    renderStack(aiGwang, engine.aiCaptured.gwang);
+    renderStack(aiAnimal, engine.aiCaptured.animal);
+    renderStack(aiRibbon, engine.aiCaptured.ribbon);
+    renderStack(aiJunk, engine.aiCaptured.junk);
   }
 
   // 머니 & 점수 갱신
@@ -464,11 +476,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
       }
     } else if (type === 'deckFlipped') {
-      // 🌟 중앙 덱 3D 뒤집기(Card Flip) 비행 실행!
       await performDeckFlipFlight(data.card.month, data.card);
       renderAll();
     } else if (type === 'cardsCaptured') {
-      // 🌟 매칭된 패 수거(먹기) 비행 실행!
       await performCaptureAnimation(data.actor, data.month, data.cards);
       renderAll();
     } else if (type === 'turnResult') {

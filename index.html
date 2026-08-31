@@ -6,14 +6,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>반반이 맞고 (BANBAN GO-STOP) - 정통 화투 에디션</title>
+  <title>반반이 맞고 (BANBAN MATGO) - 상용 정통 화투 에디션</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=12.0">
+  <link rel="stylesheet" href="style.css?v=20.0">
 </head>
 <body>
-  <!-- GoStop Green Felt Board Container -->
+  <!-- GoStop Commercial Green Felt Board Container -->
   <div class="gostop-app">
     <!-- Header Navigation with Money Settings -->
     <header class="gostop-header">
@@ -37,7 +37,7 @@
 
     <!-- Main Table Board -->
     <main class="board-table">
-      <!-- Top: Opponent (Banban AI) Zone -->
+      <!-- 🐶 TOP: Opponent (AI Banban) Zone -->
       <section class="player-zone ai-zone">
         <div class="player-profile">
           <div class="avatar-wrap">
@@ -54,50 +54,48 @@
           </div>
         </div>
 
-        <!-- AI Captured Cards Area -->
+        <!-- AI Captured Cards Area (Stacked Pile) -->
         <div class="captured-row" id="aiCapturedRow">
-          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards" id="aiGwang"></div></div>
-          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards" id="aiAnimal"></div></div>
-          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards" id="aiRibbon"></div></div>
-          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards" id="aiJunk"></div></div>
+          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards-stack" id="aiGwang"></div></div>
+          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards-stack" id="aiAnimal"></div></div>
+          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards-stack" id="aiRibbon"></div></div>
+          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards-stack" id="aiJunk"></div></div>
         </div>
 
-        <!-- AI Hand (Back of cards) -->
-        <div class="hand-row ai-hand-row" id="aiHandRow"></div>
+        <!-- AI Hand (Fanning Cascade) -->
+        <div class="hand-row fanning-hand ai-hand-row" id="aiHandRow"></div>
       </section>
 
-      <!-- Center: Ground Field & Deck -->
+      <!-- 🌿 CENTER: Free Green Felt Field (자유 담요 바닥판 & 3D 입체 덱) -->
       <section class="ground-field" id="groundFieldSection">
-        <!-- Flying Card Layer for Slap Animation -->
-        <div id="flyLayer" class="fly-layer"></div>
-
-        <div class="ground-cards-grid" id="groundGrid">
-          <!-- 12 Month Slots Dynamically Rendered -->
+        <!-- Floating Active Ground Cards -->
+        <div class="ground-free-field" id="groundFreeField">
+          <!-- Dynamically Populated Active Cards Only -->
         </div>
 
-        <!-- Center Draw Deck & Status Notification -->
+        <!-- 3D Layered Center Draw Deck -->
         <div class="center-deck-wrap">
-          <div class="card-deck" id="centerDeck">
-            <div class="deck-card-top">🎴</div>
-            <span class="deck-count" id="deckCount">22</span>
+          <div class="card-deck deck-3d-stacked" id="centerDeck">
+            <div class="deck-layer-top">🎴</div>
+            <span class="deck-count" id="deckCount">20</span>
           </div>
           <div class="action-banner" id="actionBanner">쪽!! 상대 피 1장 획득! 🐾</div>
         </div>
       </section>
 
-      <!-- Bottom: User (Master) Zone -->
+      <!-- 👑 BOTTOM: User (Master) Zone -->
       <section class="player-zone user-zone">
-        <!-- User Hand Cards -->
-        <div class="hand-row user-hand-row" id="userHandRow">
+        <!-- User Fanning Hand Cards (부채꼴 겹침 & 솟아오름) -->
+        <div class="hand-row fanning-hand user-hand-row" id="userHandRow">
           <!-- Dynamically populated cards -->
         </div>
 
-        <!-- User Captured Cards Area -->
+        <!-- User Captured Cards Area (Stacked Pile) -->
         <div class="captured-row" id="userCapturedRow">
-          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards" id="userGwang"></div></div>
-          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards" id="userAnimal"></div></div>
-          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards" id="userRibbon"></div></div>
-          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards" id="userJunk"></div></div>
+          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards-stack" id="userGwang"></div></div>
+          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards-stack" id="userAnimal"></div></div>
+          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards-stack" id="userRibbon"></div></div>
+          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards-stack" id="userJunk"></div></div>
         </div>
 
         <!-- User Profile Bar -->
@@ -119,7 +117,7 @@
     </main>
   </div>
 
-  <!-- Go / Stop Decision Modal -->
+  <!-- Decision & Result Modals -->
   <div id="goStopModal" class="modal-backdrop hidden">
     <div class="modal-card modal-gostop">
       <img src="assets/banban/char_happy.jpg" alt="고스톱" class="modal-dog-img">
@@ -132,7 +130,6 @@
     </div>
   </div>
 
-  <!-- Target Choice Modal -->
   <div id="choiceModal" class="modal-backdrop hidden">
     <div class="modal-card modal-choice">
       <h3 class="modal-title">가져갈 패를 선택하세요</h3>
@@ -140,7 +137,6 @@
     </div>
   </div>
 
-  <!-- Game End Result Modal -->
   <div id="resultModal" class="modal-backdrop hidden">
     <div class="modal-card modal-result">
       <img src="assets/banban/char_happy.jpg" alt="결과" id="resultAvatar" class="modal-dog-img">
@@ -150,7 +146,6 @@
     </div>
   </div>
 
-  <!-- Rules / Jokbo Modal -->
   <div id="rulesModal" class="modal-backdrop hidden">
     <div class="modal-card modal-rules">
       <div class="rules-header">
@@ -172,9 +167,9 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/cards.js?v=12.0"></script>
-  <script src="js/audio.js?v=12.0"></script>
-  <script src="js/engine.js?v=12.0"></script>
-  <script src="js/app.js?v=12.0"></script>
+  <script src="js/cards.js?v=20.0"></script>
+  <script src="js/audio.js?v=20.0"></script>
+  <script src="js/engine.js?v=20.0"></script>
+  <script src="js/app.js?v=20.0"></script>
 </body>
 </html>
