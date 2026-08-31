@@ -1,5 +1,6 @@
 /**
- * BANBAN GO-STOP - Main Application Controller & DOM Binder
+ * BANBAN MATGO - Hangame Matgo Style Application Controller
+ * 정통 48장 화투 그래픽, 손패/바닥패 겹치기 및 매칭 하이라이트 힌트 시스템
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,8 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let pendingPlayCardId = null;
 
-  // 🎴 화투패 DOM 요소 생성 함수
-  function createCardElement(card, isBack = false, isSmall = false) {
+  // 🎴 정통 화투패 DOM 요소 생성 (정통 화투 SVG 그래픽 탑재)
+  function createCardElement(card, isBack = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `hwatu-card ${isBack ? 'card-back' : ''}`;
     cardEl.dataset.id = card.id;
@@ -63,30 +64,28 @@ document.addEventListener('DOMContentLoaded', () => {
       return cardEl;
     }
 
-    // 뱃지 판정
-    let badgeHtml = '';
-    if (card.type === 'gwang') {
-      badgeHtml = `<div class="card-badge-gwang">光</div>`;
-    } else if (card.type === 'ribbon') {
-      const cls = card.ribbonType === 'hong' ? 'badge-hong' : (card.ribbonType === 'cheong' ? 'badge-cheong' : 'badge-cho');
-      const text = card.ribbonType === 'hong' ? '홍단' : (card.ribbonType === 'cheong' ? '청단' : '초단');
-      badgeHtml = `<div class="card-badge-dan ${cls}">${text}</div>`;
+    // 정통 화투 SVG 그래픽 렌더링
+    if (window.getHwatuSvg) {
+      cardEl.innerHTML = window.getHwatuSvg(card);
     }
 
-    const monthLabel = card.month === 0 ? '보너스' : `${card.month}월`;
-
-    cardEl.innerHTML = `
-      ${badgeHtml}
-      <div class="card-img-wrap">
-        <img src="${card.img}" alt="${card.name}">
-      </div>
-      <div class="card-meta-bar">
-        <span>${monthLabel}</span>
-        <span>${card.banbanText || (card.type === 'junk' ? '피' : '열')}</span>
-      </div>
-    `;
-
     return cardEl;
+  }
+
+  // ✨ 한게임 맞고 핵심: 바닥 매칭 가이드 힌트 (Match Highlighting)
+  function highlightMatchesOnGround(month) {
+    clearGroundHighlights();
+    if (!month || month === 0) return;
+
+    const matchedCards = groundGrid.querySelectorAll(`.hwatu-card[data-month="${month}"]`);
+    matchedCards.forEach(cardEl => {
+      cardEl.classList.add('match-highlight');
+    });
+  }
+
+  function clearGroundHighlights() {
+    const highlighted = groundGrid.querySelectorAll('.match-highlight');
+    highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
   // 전체 화면 렌더링
@@ -100,17 +99,22 @@ document.addEventListener('DOMContentLoaded', () => {
     deckCount.textContent = engine.deck.length;
   }
 
-  // 내 손패 렌더링
+  // 🎴 내 손패 렌더링 (겹쳐진 스택 + 호버 매칭 힌트)
   function renderUserHand() {
     userHandRow.innerHTML = '';
     engine.playerHand.forEach(card => {
       const el = createCardElement(card);
+
+      // 마우스 오버 / 터치 시 바닥 매칭 힌트 발동
+      el.addEventListener('mouseenter', () => highlightMatchesOnGround(card.month));
+      el.addEventListener('mouseleave', clearGroundHighlights);
       el.addEventListener('click', () => onUserCardClick(card));
+
       userHandRow.appendChild(el);
     });
   }
 
-  // AI 손패 렌더링 (뒷면)
+  // AI 손패 렌더링 (뒷면 겹침)
   function renderAiHand() {
     aiHandRow.innerHTML = '';
     engine.aiHand.forEach(card => {
@@ -119,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 바닥패 렌더링 (12개 월 슬롯)
+  // 🎴 바닥패 렌더링 (12개 월 슬롯에 겹쳐진 형태)
   function renderGround() {
     groundGrid.innerHTML = '';
     for (let m = 1; m <= 12; m++) {
@@ -128,8 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
       slot.dataset.month = m;
 
       const cardsInMonth = engine.groundCards[m] || [];
-      cardsInMonth.forEach(card => {
+      cardsInMonth.forEach((card, idx) => {
         const cardEl = createCardElement(card);
+        // 겹쳐진 배치 오프셋
+        if (idx > 0) {
+          cardEl.style.transform = `translate(${idx * 7}px, ${idx * 7}px) rotate(${idx % 2 === 0 ? 4 : -4}deg)`;
+        }
         slot.appendChild(cardEl);
       });
 
@@ -137,12 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 획득패 렌더링
+  // 🎴 획득패 렌더링 (광/열/띠/피 촘촘한 겹침)
   function renderCaptured() {
     const renderGroup = (container, cards) => {
       container.innerHTML = '';
-      cards.forEach(card => {
-        container.appendChild(createCardElement(card, false, true));
+      cards.forEach((card, idx) => {
+        const el = createCardElement(card);
+        container.appendChild(el);
       });
     };
 
@@ -190,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (engine.currentTurn !== 'player' || engine.isGameOver) return;
     if (window.goStopAudio) window.goStopAudio.init();
 
+    clearGroundHighlights();
     const groundMatches = engine.groundCards[card.month] || [];
 
     // 바닥에 같은 월이 2장 있으면 유저가 선택하도록 팝업
@@ -218,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceModal.classList.remove('hidden');
   }
 
-  // 엔진 이벤트 핸들러
+  // 엔진 이벤트 리스너
   engine.onEvent = (type, data) => {
     if (type === 'deal') {
       showBanner('화투패 분배 완료! 게임 시작 🎴');
