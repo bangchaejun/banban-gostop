@@ -1,18 +1,23 @@
 /**
- * BANBAN MATGO - Hangame Matgo Style Application Controller
- * 정통 48장 화투 그래픽, 손패/바닥패 겹치기 및 매칭 하이라이트 힌트 시스템
+ * BANBAN MATGO - Realistic Flight, Slam Shockwave & Money Betting Controller
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   const engine = new window.GoStopEngine();
 
   // DOM Elements
+  const appContainer = document.querySelector('.gostop-app');
   const groundGrid = document.getElementById('groundGrid');
   const userHandRow = document.getElementById('userHandRow');
   const aiHandRow = document.getElementById('aiHandRow');
+  const centerDeck = document.getElementById('centerDeck');
   const deckCount = document.getElementById('deckCount');
   const actionBanner = document.getElementById('actionBanner');
+  const flyLayer = document.getElementById('flyLayer');
 
+  const selectBet = document.getElementById('selectBet');
+  const userMoney = document.getElementById('userMoney');
+  const aiMoney = document.getElementById('aiMoney');
   const userScore = document.getElementById('userScore');
   const aiScore = document.getElementById('aiScore');
   const userSpeech = document.getElementById('userSpeech');
@@ -52,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let pendingPlayCardId = null;
 
-  // 🎴 정통 화투패 DOM 요소 생성 (실물 정통 화투 카드 전면 렌더링)
+  // 🎴 화투패 DOM 요소 생성
   function createCardElement(card, isBack = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `hwatu-card ${isBack ? 'card-back' : ''}`;
@@ -64,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return cardEl;
     }
 
-    // 광 뱃지
     let badgeHtml = '';
     if (card.type === 'gwang') {
       badgeHtml = `<div class="card-badge-gwang">光</div>`;
@@ -89,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return cardEl;
   }
 
-  // ✨ 한게임 맞고 핵심: 바닥 매칭 가이드 힌트 (Match Highlighting)
+  // ✨ 바닥 매칭 가이드 힌트 (Match Highlighting)
   function highlightMatchesOnGround(month) {
     clearGroundHighlights();
     if (!month || month === 0) return;
@@ -105,33 +109,65 @@ document.addEventListener('DOMContentLoaded', () => {
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
+  // 🚀 역동적 카드 비행 & 바닥 촥! 슬램 애니메이션
+  async function animateCardFlight(fromRect, targetMonth, card, isBack = false) {
+    if (!flyLayer) return;
+
+    // 타겟 슬롯 좌표 탐색
+    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
+    const toRect = slotEl.getBoundingClientRect();
+    const appRect = appContainer.getBoundingClientRect();
+
+    const flyingCard = createCardElement(card, isBack);
+    flyingCard.classList.add('flying-card-anim');
+    
+    // 시작 위치
+    flyingCard.style.left = `${fromRect.left - appRect.left}px`;
+    flyingCard.style.top = `${fromRect.top - appRect.top}px`;
+    flyingCard.style.transform = 'scale(1.1) rotate(-8deg)';
+    flyLayer.appendChild(flyingCard);
+
+    // 프레임 대기 후 타겟으로 날아가기
+    await new Promise(r => requestAnimationFrame(r));
+    flyingCard.style.left = `${toRect.left - appRect.left + 4}px`;
+    flyingCard.style.top = `${toRect.top - appRect.top + 4}px`;
+    flyingCard.style.transform = 'scale(1.0) rotate(0deg)';
+
+    // 타격 순간 대기
+    await new Promise(r => setTimeout(r, 260));
+
+    // 🎴 바닥 촥! 타격음 & 화면 흔들림
+    if (window.goStopAudio) window.goStopAudio.playCardSlap(1.2);
+    appContainer.classList.add('screen-shake');
+    setTimeout(() => appContainer.classList.remove('screen-shake'), 140);
+
+    flyingCard.remove();
+  }
+
   // 전체 화면 렌더링
   function renderAll() {
     renderUserHand();
     renderAiHand();
     renderGround();
     renderCaptured();
-    updateScores();
+    updateMoneyAndScores();
     updateTurnBadges();
     deckCount.textContent = engine.deck.length;
   }
 
-  // 🎴 내 손패 렌더링 (겹쳐진 스택 + 호버 매칭 힌트)
+  // 내 손패 렌더링
   function renderUserHand() {
     userHandRow.innerHTML = '';
     engine.playerHand.forEach(card => {
       const el = createCardElement(card);
-
-      // 마우스 오버 / 터치 시 바닥 매칭 힌트 발동
       el.addEventListener('mouseenter', () => highlightMatchesOnGround(card.month));
       el.addEventListener('mouseleave', clearGroundHighlights);
-      el.addEventListener('click', () => onUserCardClick(card));
-
+      el.addEventListener('click', (e) => onUserCardClick(card, el));
       userHandRow.appendChild(el);
     });
   }
 
-  // AI 손패 렌더링 (뒷면 겹침)
+  // AI 손패 렌더링
   function renderAiHand() {
     aiHandRow.innerHTML = '';
     engine.aiHand.forEach(card => {
@@ -140,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 🎴 바닥패 렌더링 (12개 월 슬롯에 겹쳐진 형태)
+  // 바닥패 렌더링
   function renderGround() {
     groundGrid.innerHTML = '';
     for (let m = 1; m <= 12; m++) {
@@ -151,9 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const cardsInMonth = engine.groundCards[m] || [];
       cardsInMonth.forEach((card, idx) => {
         const cardEl = createCardElement(card);
-        // 겹쳐진 배치 오프셋
         if (idx > 0) {
-          cardEl.style.transform = `translate(${idx * 7}px, ${idx * 7}px) rotate(${idx % 2 === 0 ? 4 : -4}deg)`;
+          cardEl.style.transform = `translate(${idx * 8}px, ${idx * 8}px) rotate(${idx % 2 === 0 ? 4 : -4}deg)`;
         }
         slot.appendChild(cardEl);
       });
@@ -162,13 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 🎴 획득패 렌더링 (광/열/띠/피 촘촘한 겹침)
+  // 획득패 렌더링
   function renderCaptured() {
     const renderGroup = (container, cards) => {
       container.innerHTML = '';
-      cards.forEach((card, idx) => {
-        const el = createCardElement(card);
-        container.appendChild(el);
+      cards.forEach((card) => {
+        container.appendChild(createCardElement(card));
       });
     };
 
@@ -183,8 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGroup(aiJunk, engine.aiCaptured.junk);
   }
 
-  // 점수 갱신
-  function updateScores() {
+  // 머니 & 점수 갱신
+  function updateMoneyAndScores() {
+    userMoney.textContent = `${engine.playerMoney.toLocaleString()}원`;
+    aiMoney.textContent = `${engine.aiMoney.toLocaleString()}원`;
     userScore.textContent = `${engine.playerScore} 점`;
     aiScore.textContent = `${engine.aiScore} 점`;
   }
@@ -194,11 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (engine.currentTurn === 'player') {
       userTurnBadge.classList.add('active');
       aiTurnBadge.classList.remove('active');
-      userSpeech.textContent = '손패에서 칠 화투패를 선택하세요! 🎴';
+      userSpeech.textContent = `칠 화투패를 터치하세요! (판돈: 점당 ${engine.pointBet.toLocaleString()}원) 🎴`;
     } else {
       userTurnBadge.classList.remove('active');
       aiTurnBadge.classList.add('active');
-      aiSpeech.textContent = '어떤 걸 먹을까 멍멍... 🐾';
+      aiSpeech.textContent = '반반이가 고민 중이다 멍멍... 🐾';
     }
   }
 
@@ -211,32 +247,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1400);
   }
 
-  // 플레이어 카드 클릭 이벤트
-  function onUserCardClick(card) {
-    if (engine.currentTurn !== 'player' || engine.isGameOver) return;
+  // 유저 카드 클릭
+  async function onUserCardClick(card, cardEl) {
+    if (engine.currentTurn !== 'player' || engine.isGameOver || engine.isProcessing) return;
     if (window.goStopAudio) window.goStopAudio.init();
 
     clearGroundHighlights();
     const groundMatches = engine.groundCards[card.month] || [];
 
-    // 바닥에 같은 월이 2장 있으면 유저가 선택하도록 팝업
     if (groundMatches.length === 2) {
       pendingPlayCardId = card.id;
       showChoiceModal(groundMatches);
     } else {
-      engine.playCard(card.id);
+      await engine.playCard(card.id);
       renderAll();
     }
   }
 
-  // 선택 모달
   function showChoiceModal(choices) {
     choiceCardsRow.innerHTML = '';
     choices.forEach(c => {
       const el = createCardElement(c);
-      el.addEventListener('click', () => {
+      el.addEventListener('click', async () => {
         choiceModal.classList.add('hidden');
-        engine.playCard(pendingPlayCardId, c.id);
+        await engine.playCard(pendingPlayCardId, c.id);
         pendingPlayCardId = null;
         renderAll();
       });
@@ -245,10 +279,20 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceModal.classList.remove('hidden');
   }
 
-  // 엔진 이벤트 리스너
-  engine.onEvent = (type, data) => {
+  // 엔진 비동기 이벤트 핸들러
+  engine.onEvent = async (type, data) => {
     if (type === 'deal') {
-      showBanner('화투패 분배 완료! 게임 시작 🎴');
+      showBanner(data.message);
+      renderAll();
+    } else if (type === 'cardPlayed') {
+      const fromRow = data.actor === 'player' ? userHandRow : aiHandRow;
+      const fromRect = fromRow.getBoundingClientRect();
+      await animateCardFlight(fromRect, data.card.month, data.card, data.actor === 'ai');
+      renderAll();
+    } else if (type === 'deckFlipped') {
+      const fromRect = centerDeck.getBoundingClientRect();
+      await animateCardFlight(fromRect, data.card.month, data.card);
+      renderAll();
     } else if (type === 'turnResult') {
       if (data.logs.length > 0) {
         showBanner(data.logs.join(' | '));
@@ -256,7 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAll();
 
       if (data.canDeclareGoStop && data.actor === 'player') {
-        goStopDesc.textContent = `현재 점수: ${data.playerScore}점 달성!`;
+        const estWon = data.playerScore * engine.pointBet;
+        goStopDesc.innerHTML = `현재 점수: <strong>${data.playerScore}점</strong><br>예상 획득 머니: <span style="color:#ffd700; font-weight:900;">${estWon.toLocaleString()}원</span>`;
         goStopModal.classList.remove('hidden');
       }
     } else if (type === 'goDeclared') {
@@ -271,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // 고/스톱 선언 버튼
   btnDeclareGo.addEventListener('click', () => {
     goStopModal.classList.add('hidden');
     engine.declareGo('player');
@@ -282,15 +326,31 @@ document.addEventListener('DOMContentLoaded', () => {
     engine.declareStop('player');
   });
 
-  // 결과 모달
+  // 💰 머니 정산 결과 모달
   function showResultModal(data) {
-    resultTitle.textContent = data.winner === 'player' ? '마스터님 완승!! 🏆' : '반반이 승리! 🐶';
-    const bonusText = data.bonuses.length > 0 ? `<p>적용 배수: ${data.bonuses.join(', ')}</p>` : '';
+    const isPlayerWin = data.winner === 'player';
+    resultTitle.textContent = isPlayerWin ? '마스터님 완승!! 🏆' : '반반이 승리! 🐶';
+    const bonusText = data.bonuses.length > 0 ? `<p style="color:#cbd5e1; font-size:0.85rem;">적용 배수: ${data.bonuses.join(', ')}</p>` : '';
+    
+    const wonSign = isPlayerWin ? '+' : '-';
+    const wonColor = isPlayerWin ? '#ffd700' : '#ff8080';
+
+    let chargeBtnHtml = '';
+    if (data.isBankrupt && !isPlayerWin) {
+      chargeBtnHtml = `<p style="color:#ff4d6d; font-weight:900; margin:6px 0;">올인(파산)! 1,000,000원 무료 충전 지원!</p>`;
+      engine.resetMoney();
+    }
+
     resultDetails.innerHTML = `
-      <p style="font-size:1.1rem; font-weight:700; color:var(--gold-accent);">기본 점수: ${data.baseScore}점 × ${data.multiplier}배</p>
+      <p style="font-size:1.1rem; font-weight:700;">기본 점수: ${data.baseScore}점 × ${data.multiplier}배 = <strong>${data.finalScore}점</strong></p>
       ${bonusText}
-      <h3 style="font-size:1.4rem; color:#ff8080; margin-top:8px;">최종 점수: ${data.finalScore}점</h3>
+      <h3 style="font-size:1.6rem; color:${wonColor}; margin:10px 0; text-shadow:0 0 15px ${wonColor};">
+        ${wonSign}${data.wonMoney.toLocaleString()}원
+      </h3>
+      <p style="font-size:0.9rem; color:#94a3b8;">내 소지금: ${data.playerMoney.toLocaleString()}원 | 반반이: ${data.aiMoney.toLocaleString()}원</p>
+      ${chargeBtnHtml}
     `;
+
     resultModal.classList.remove('hidden');
   }
 
@@ -304,6 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.goStopAudio) window.goStopAudio.init();
     engine.startNewGame();
     renderAll();
+  });
+
+  // 판돈 설정 변경 이벤트
+  selectBet.addEventListener('change', (e) => {
+    const betVal = parseInt(e.target.value, 10);
+    engine.setPointBet(betVal);
+    showBanner(`판돈이 점당 ${betVal.toLocaleString()}원으로 변경되었습니다! 💰`);
   });
 
   btnSound.addEventListener('click', () => {
