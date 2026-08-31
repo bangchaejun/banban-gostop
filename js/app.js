@@ -109,9 +109,18 @@ document.addEventListener('DOMContentLoaded', () => {
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
-  // 🚀 역동적 카드 비행 & 바닥 촥! 슬램 애니메이션
-  async function animateCardFlight(fromRect, targetMonth, card, isBack = false) {
+  // 🚀 역동적 카드 비행 & 바닥 촥! 슬램 애니메이션 (정확한 출발점/도착점 좌표 보정)
+  async function animateCardFlight(fromElOrRect, targetMonth, card, isBack = false) {
     if (!flyLayer) return;
+
+    let fromRect;
+    if (fromElOrRect instanceof Element) {
+      fromRect = fromElOrRect.getBoundingClientRect();
+    } else if (fromElOrRect && fromElOrRect.left !== undefined) {
+      fromRect = fromElOrRect;
+    } else {
+      fromRect = userHandRow.getBoundingClientRect();
+    }
 
     // 타겟 슬롯 좌표 탐색
     const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
@@ -121,22 +130,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
     
-    // 시작 위치
-    flyingCard.style.left = `${fromRect.left - appRect.left}px`;
-    flyingCard.style.top = `${fromRect.top - appRect.top}px`;
-    flyingCard.style.transform = 'scale(1.1) rotate(-8deg)';
+    // 시작 위치 (손패/AI패/덱의 실제 화면 좌표에 1:1 완벽 일치)
+    const startX = fromRect.left - appRect.left;
+    const startY = fromRect.top - appRect.top;
+    const targetX = toRect.left - appRect.left + 2;
+    const targetY = toRect.top - appRect.top + 2;
+
+    flyingCard.style.left = `${startX}px`;
+    flyingCard.style.top = `${startY}px`;
+    flyingCard.style.width = `${fromRect.width || 68}px`;
+    flyingCard.style.height = `${fromRect.height || 108}px`;
+    flyingCard.style.transform = isBack ? 'scale(0.85) rotate(6deg)' : 'scale(1.15) rotate(-6deg)';
     flyLayer.appendChild(flyingCard);
 
-    // 프레임 대기 후 타겟으로 날아가기
+    // 렌더 프레임 대기 후 바닥 타겟으로 날아가기
     await new Promise(r => requestAnimationFrame(r));
-    flyingCard.style.left = `${toRect.left - appRect.left + 4}px`;
-    flyingCard.style.top = `${toRect.top - appRect.top + 4}px`;
+    flyingCard.style.transition = 'all 0.26s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+    flyingCard.style.left = `${targetX}px`;
+    flyingCard.style.top = `${targetY}px`;
+    flyingCard.style.width = '64px';
+    flyingCard.style.height = '100px';
     flyingCard.style.transform = 'scale(1.0) rotate(0deg)';
 
-    // 타격 순간 대기
+    // 타격 완료 대기
     await new Promise(r => setTimeout(r, 260));
 
-    // 🎴 바닥 촥! 타격음 & 화면 흔들림
+    // 🎴 바닥 촥! 타격음 & 화면 셰이크
     if (window.goStopAudio) window.goStopAudio.playCardSlap(1.2);
     appContainer.classList.add('screen-shake');
     setTimeout(() => appContainer.classList.remove('screen-shake'), 140);
@@ -285,13 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
       showBanner(data.message);
       renderAll();
     } else if (type === 'cardPlayed') {
-      const fromRow = data.actor === 'player' ? userHandRow : aiHandRow;
-      const fromRect = fromRow.getBoundingClientRect();
-      await animateCardFlight(fromRect, data.card.month, data.card, data.actor === 'ai');
+      let fromEl;
+      if (data.actor === 'player') {
+        fromEl = userHandRow.querySelector(`.hwatu-card[data-id="${data.card.id}"]`) || userHandRow;
+      } else {
+        fromEl = aiHandRow.firstElementChild || aiHandRow;
+      }
+      await animateCardFlight(fromEl, data.card.month, data.card, data.actor === 'ai');
       renderAll();
     } else if (type === 'deckFlipped') {
-      const fromRect = centerDeck.getBoundingClientRect();
-      await animateCardFlight(fromRect, data.card.month, data.card);
+      await animateCardFlight(centerDeck, data.card.month, data.card);
       renderAll();
     } else if (type === 'turnResult') {
       if (data.logs.length > 0) {
