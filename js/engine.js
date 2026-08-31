@@ -173,8 +173,8 @@ class GoStopEngine {
       await this.onEvent('cardPlayed', { actor, card: playedCard });
     }
 
-    // 🌟 손패가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (450ms)
-    await new Promise(r => setTimeout(r, 450));
+    // 🌟 손패가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (500ms)
+    await new Promise(r => setTimeout(r, 500));
 
     const month = playedCard.month;
     let handMatches = (month > 0 && this.groundCards[month]) ? this.groundCards[month] : [];
@@ -201,8 +201,8 @@ class GoStopEngine {
         await this.onEvent('deckFlipped', { actor, card: deckCard });
       }
 
-      // 🌟 덱 카드가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (450ms)
-      await new Promise(r => setTimeout(r, 450));
+      // 🌟 덱 카드가 바닥에 꽂힌 후 눈으로 확인하는 딜레이 (500ms)
+      await new Promise(r => setTimeout(r, 500));
 
       const deckMonth = deckCard.month;
       let deckMatches = (deckMonth > 0 && this.groundCards[deckMonth]) ? this.groundCards[deckMonth] : [];

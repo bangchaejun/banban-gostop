@@ -129,11 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => banner.remove(), 1300);
   }
 
-  // 🚀 0.1px 오차 없는 뷰포트 절대좌표 비행 시스템
+  // 🚀 0.1px 오차 없는 뷰포트 절대좌표 비행 시스템 (3D 포물선 & 바닥 카드 포개짐 물리 연출)
   async function performCardFlight(originType, targetMonth, card, customOriginRect = null) {
     if (!flyLayer) return;
 
     const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
+    const existingCards = slotEl.querySelectorAll('.hwatu-card');
     const destRect = slotEl.getBoundingClientRect();
 
     let originRect;
@@ -142,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (originType === 'player') {
       originRect = customOriginRect || userHandRow.getBoundingClientRect();
     } else if (originType === 'ai') {
-      // 🐶 완벽한 상단 AI 아바타/손패 위치 (뷰포트 상단 Y: ~100px)
       const aiCards = aiHandRow.querySelectorAll('.hwatu-card');
       if (aiCards.length > 0) {
         originRect = aiCards[Math.floor(aiCards.length / 2)].getBoundingClientRect();
@@ -151,43 +151,59 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       isBack = true;
     } else if (originType === 'deck') {
-      // 🎴 완벽한 중앙 덱 위치 (뷰포트 중앙 우측)
       originRect = centerDeck.getBoundingClientRect();
     }
 
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
 
-    // 뷰포트 절대좌표 그대로 적용 (fixed 컨테이너)
+    // 1단계: 출발지에서 손을 들어 올린 3D 붕 뜸 (Elevation Scale 1.35)
     flyingCard.style.position = 'fixed';
     flyingCard.style.left = `${originRect.left}px`;
     flyingCard.style.top = `${originRect.top}px`;
     flyingCard.style.width = `${originRect.width || 68}px`;
     flyingCard.style.height = `${originRect.height || 108}px`;
-    flyingCard.style.transform = isBack ? 'scale(0.9) rotate(14deg)' : 'scale(1.18) rotate(-8deg)';
+    flyingCard.style.transform = isBack ? 'scale(1.2) rotate(16deg) translateY(-25px)' : 'scale(1.35) rotate(-14deg) translateY(-35px)';
     flyingCard.style.zIndex = '10002';
     flyingCard.style.transition = 'none';
     flyLayer.appendChild(flyingCard);
 
-    // 1 프레임 대기 후 0.32초 동안 시원한 포물선 회전 비행
+    // 포개짐 오프셋 계산 (바닥에 기존 카드가 있으면 그 위에 비스듬히 착지)
+    const overlapCount = existingCards.length;
+    const offsetX = overlapCount > 0 ? (overlapCount * 10) : 0;
+    const offsetY = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const targetRotate = overlapCount > 0 ? (overlapCount % 2 === 0 ? 6 : -6) : 0;
+
+    const targetX = destRect.left + 2 + offsetX;
+    const targetY = destRect.top + 2 + offsetY;
+
+    // 2단계: 0.46초 동안 손목 스냅을 타고 포물선을 그리며 바닥 카드 위로 촥! 꽂히기
     await new Promise(r => requestAnimationFrame(r));
-    flyingCard.style.transition = 'all 0.32s cubic-bezier(0.18, 0.95, 0.35, 1.1)';
-    flyingCard.style.left = `${destRect.left + 2}px`;
-    flyingCard.style.top = `${destRect.top + 2}px`;
+    flyingCard.style.transition = 'all 0.46s cubic-bezier(0.12, 0.88, 0.28, 1.05)';
+    flyingCard.style.left = `${targetX}px`;
+    flyingCard.style.top = `${targetY}px`;
     flyingCard.style.width = '64px';
     flyingCard.style.height = '100px';
-    flyingCard.style.transform = 'scale(1.0) rotate(0deg)';
+    flyingCard.style.transform = `scale(1.0) rotate(${targetRotate}deg) translateY(0px)`;
 
-    await new Promise(r => setTimeout(r, 320));
+    await new Promise(r => setTimeout(r, 460));
 
-    // 🎴 바닥 착지 시 슬램 사운드 + 충격파 링 + 화면 진동
-    const centerX = destRect.left + destRect.width / 2;
-    const centerY = destRect.top + destRect.height / 2;
+    // 🎴 바닥 착지 순간: 바닥 기존 카드 반동(Jolt) + 슬램 사운드 + 충격파 링 + 화면 진동
+    if (existingCards.length > 0) {
+      existingCards.forEach(c => {
+        c.classList.remove('card-impact-jolt');
+        void c.offsetWidth; // Reflow
+        c.classList.add('card-impact-jolt');
+      });
+    }
+
+    const centerX = targetX + 32;
+    const centerY = targetY + 50;
     createSlamShockwave(centerX, centerY);
 
-    if (window.goStopAudio) window.goStopAudio.playCardSlap(1.3);
+    if (window.goStopAudio) window.goStopAudio.playCardSlap(1.35);
     appContainer.classList.add('screen-shake');
-    setTimeout(() => appContainer.classList.remove('screen-shake'), 140);
+    setTimeout(() => appContainer.classList.remove('screen-shake'), 150);
 
     flyingCard.remove();
   }
