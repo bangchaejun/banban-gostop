@@ -1,5 +1,5 @@
 /**
- * BANBAN MATGO - Precise Coordinate Flight & Human Rhythm Controller
+ * BANBAN MATGO - Commercial Grade Authentic Timing, Viewport Flight & Grand FX Engine
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let pendingPlayCardId = null;
 
-  // 🎴 화투패 DOM 요소 생성
+  // 🎴 화투패 DOM 생성
   function createCardElement(card, isBack = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `hwatu-card ${isBack ? 'card-back' : ''}`;
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return cardEl;
   }
 
-  // ✨ 바닥 매칭 가이드 힌트
+  // ✨ 바닥 매칭 하이라이트
   function highlightMatchesOnGround(month) {
     clearGroundHighlights();
     if (!month || month === 0) return;
@@ -110,11 +110,29 @@ document.addEventListener('DOMContentLoaded', () => {
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
-  // 🚀 정확한 화면 좌표(Origin)에서 바닥 슬롯으로 날아가는 정밀 비행 함수
+  // 💥 바닥 슬램 충격파 링 생성 함수
+  function createSlamShockwave(x, y) {
+    const wave = document.createElement('div');
+    wave.className = 'slam-shockwave';
+    wave.style.left = `${x}px`;
+    wave.style.top = `${y}px`;
+    document.body.appendChild(wave);
+    setTimeout(() => wave.remove(), 400);
+  }
+
+  // 🌟 거대 붓글씨 임팩트 배너 (쪽, 따닥, 뻑, 쓸 등)
+  function triggerGrandEffect(text) {
+    const banner = document.createElement('div');
+    banner.className = 'grand-effect-banner';
+    banner.textContent = text;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 1300);
+  }
+
+  // 🚀 0.1px 오차 없는 뷰포트 절대좌표 비행 시스템
   async function performCardFlight(originType, targetMonth, card, customOriginRect = null) {
     if (!flyLayer) return;
 
-    const appRect = appContainer.getBoundingClientRect();
     const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
     const destRect = slotEl.getBoundingClientRect();
 
@@ -124,49 +142,49 @@ document.addEventListener('DOMContentLoaded', () => {
     if (originType === 'player') {
       originRect = customOriginRect || userHandRow.getBoundingClientRect();
     } else if (originType === 'ai') {
-      // 🐶 무조건 상단 AI 손패/아바타 위치에서 출발!
+      // 🐶 완벽한 상단 AI 아바타/손패 위치 (뷰포트 상단 Y: ~100px)
       const aiCards = aiHandRow.querySelectorAll('.hwatu-card');
       if (aiCards.length > 0) {
         originRect = aiCards[Math.floor(aiCards.length / 2)].getBoundingClientRect();
       } else {
-        originRect = aiHandRow.getBoundingClientRect();
+        originRect = aiAvatar.getBoundingClientRect();
       }
       isBack = true;
     } else if (originType === 'deck') {
-      // 🎴 무조건 중앙 덱 위치에서 출발!
+      // 🎴 완벽한 중앙 덱 위치 (뷰포트 중앙 우측)
       originRect = centerDeck.getBoundingClientRect();
     }
 
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
 
-    const startX = originRect.left - appRect.left;
-    const startY = originRect.top - appRect.top;
-    const endX = destRect.left - appRect.left + 2;
-    const endY = destRect.top - appRect.top + 2;
-
-    flyingCard.style.position = 'absolute';
-    flyingCard.style.left = `${startX}px`;
-    flyingCard.style.top = `${startY}px`;
+    // 뷰포트 절대좌표 그대로 적용 (fixed 컨테이너)
+    flyingCard.style.position = 'fixed';
+    flyingCard.style.left = `${originRect.left}px`;
+    flyingCard.style.top = `${originRect.top}px`;
     flyingCard.style.width = `${originRect.width || 68}px`;
     flyingCard.style.height = `${originRect.height || 108}px`;
-    flyingCard.style.transform = isBack ? 'scale(0.85) rotate(12deg)' : 'scale(1.15) rotate(-8deg)';
-    flyingCard.style.zIndex = '9999';
+    flyingCard.style.transform = isBack ? 'scale(0.9) rotate(14deg)' : 'scale(1.18) rotate(-8deg)';
+    flyingCard.style.zIndex = '10002';
     flyingCard.style.transition = 'none';
     flyLayer.appendChild(flyingCard);
 
-    // 1 프레임 대기 후 0.35초 동안 시원한 포물선 비행
+    // 1 프레임 대기 후 0.32초 동안 시원한 포물선 회전 비행
     await new Promise(r => requestAnimationFrame(r));
-    flyingCard.style.transition = 'all 0.32s cubic-bezier(0.2, 0.9, 0.35, 1.1)';
-    flyingCard.style.left = `${endX}px`;
-    flyingCard.style.top = `${endY}px`;
+    flyingCard.style.transition = 'all 0.32s cubic-bezier(0.18, 0.95, 0.35, 1.1)';
+    flyingCard.style.left = `${destRect.left + 2}px`;
+    flyingCard.style.top = `${destRect.top + 2}px`;
     flyingCard.style.width = '64px';
     flyingCard.style.height = '100px';
     flyingCard.style.transform = 'scale(1.0) rotate(0deg)';
 
     await new Promise(r => setTimeout(r, 320));
 
-    // 바닥 촥! 타격음 및 화면 진동
+    // 🎴 바닥 착지 시 슬램 사운드 + 충격파 링 + 화면 진동
+    const centerX = destRect.left + destRect.width / 2;
+    const centerY = destRect.top + destRect.height / 2;
+    createSlamShockwave(centerX, centerY);
+
     if (window.goStopAudio) window.goStopAudio.playCardSlap(1.3);
     appContainer.classList.add('screen-shake');
     setTimeout(() => appContainer.classList.remove('screen-shake'), 140);
@@ -288,13 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingPlayCardId = card.id;
       showChoiceModal(groundMatches);
     } else {
-      // 1. 클릭한 손패 엘리먼트 위치 측정
       const originRect = cardEl.getBoundingClientRect();
-      // 2. 손패에서 즉시 투명화
       cardEl.style.opacity = '0';
-      // 3. 내 손패 위치에서 바닥으로 날아가기
       await performCardFlight('player', card.month, card, originRect);
-      // 4. 엔진 턴 실행
       await engine.playCard(card.id);
       renderAll();
     }
@@ -340,11 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
       }
     } else if (type === 'deckFlipped') {
-      // 중앙 덱에서 튕겨져 나오는 비행 애니메이션
       await performCardFlight('deck', data.card.month, data.card);
       renderAll();
     } else if (type === 'turnResult') {
       if (data.logs.length > 0) {
+        data.logs.forEach(log => {
+          if (log.includes('쪽')) triggerGrandEffect('쪽!! 🐾');
+          else if (log.includes('따닥')) triggerGrandEffect('따닥!! 💥');
+          else if (log.includes('뻑')) triggerGrandEffect('뻑!! 😱');
+          else if (log.includes('쓸')) triggerGrandEffect('싹쓸이!! 🧹');
+        });
         showBanner(data.logs.join(' | '));
       }
       renderAll();
@@ -355,12 +374,14 @@ document.addEventListener('DOMContentLoaded', () => {
         goStopModal.classList.remove('hidden');
       }
     } else if (type === 'goDeclared') {
+      triggerGrandEffect(`${data.count}고!! 🔥`);
       showBanner(data.message);
       renderAll();
     } else if (type === 'gameEnd') {
       renderAll();
       showResultModal(data);
     } else if (type === 'draw') {
+      triggerGrandEffect('나가리!!');
       showBanner(data.message);
       renderAll();
     }
@@ -373,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnDeclareStop.addEventListener('click', () => {
     goStopModal.classList.add('hidden');
+    triggerGrandEffect('스톱!! 🛑');
     engine.declareStop('player');
   });
 
