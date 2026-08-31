@@ -1,5 +1,5 @@
 /**
- * BANBAN MATGO - Realistic Flight, Slam Shockwave & Money Betting Controller
+ * BANBAN MATGO - Precise Coordinate Flight, Ghosting & Money Betting Controller
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return cardEl;
   }
 
-  // ✨ 바닥 매칭 가이드 힌트 (Match Highlighting)
+  // ✨ 바닥 매칭 가이드 힌트
   function highlightMatchesOnGround(month) {
     clearGroundHighlights();
     if (!month || month === 0) return;
@@ -109,56 +109,47 @@ document.addEventListener('DOMContentLoaded', () => {
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
-  // 🚀 역동적 카드 비행 & 바닥 촥! 슬램 애니메이션 (정확한 출발점/도착점 좌표 보정)
-  async function animateCardFlight(fromElOrRect, targetMonth, card, isBack = false) {
-    if (!flyLayer) return;
+  // 🚀 정확한 화면 좌표(Origin)에서 바닥 슬롯으로 날아가는 정밀 비행 함수
+  async function performCardFlight(originRect, targetMonth, card, isBack = false) {
+    if (!flyLayer || !originRect) return;
 
-    let fromRect;
-    if (fromElOrRect instanceof Element) {
-      fromRect = fromElOrRect.getBoundingClientRect();
-    } else if (fromElOrRect && fromElOrRect.left !== undefined) {
-      fromRect = fromElOrRect;
-    } else {
-      fromRect = userHandRow.getBoundingClientRect();
-    }
-
-    // 타겟 슬롯 좌표 탐색
-    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
-    const toRect = slotEl.getBoundingClientRect();
     const appRect = appContainer.getBoundingClientRect();
+    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
+    const destRect = slotEl.getBoundingClientRect();
 
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
-    
-    // 시작 위치 (손패/AI패/덱의 실제 화면 좌표에 1:1 완벽 일치)
-    const startX = fromRect.left - appRect.left;
-    const startY = fromRect.top - appRect.top;
-    const targetX = toRect.left - appRect.left + 2;
-    const targetY = toRect.top - appRect.top + 2;
 
+    const startX = originRect.left - appRect.left;
+    const startY = originRect.top - appRect.top;
+    const endX = destRect.left - appRect.left + 2;
+    const endY = destRect.top - appRect.top + 2;
+
+    flyingCard.style.position = 'absolute';
     flyingCard.style.left = `${startX}px`;
     flyingCard.style.top = `${startY}px`;
-    flyingCard.style.width = `${fromRect.width || 68}px`;
-    flyingCard.style.height = `${fromRect.height || 108}px`;
+    flyingCard.style.width = `${originRect.width || 68}px`;
+    flyingCard.style.height = `${originRect.height || 108}px`;
     flyingCard.style.transform = isBack ? 'scale(0.85) rotate(6deg)' : 'scale(1.15) rotate(-6deg)';
+    flyingCard.style.zIndex = '9999';
+    flyingCard.style.transition = 'none';
     flyLayer.appendChild(flyingCard);
 
-    // 렌더 프레임 대기 후 바닥 타겟으로 날아가기
+    // 1 프레임 대기 후 타겟으로 부드럽게 이동
     await new Promise(r => requestAnimationFrame(r));
-    flyingCard.style.transition = 'all 0.26s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-    flyingCard.style.left = `${targetX}px`;
-    flyingCard.style.top = `${targetY}px`;
+    flyingCard.style.transition = 'all 0.24s cubic-bezier(0.15, 0.9, 0.35, 1.1)';
+    flyingCard.style.left = `${endX}px`;
+    flyingCard.style.top = `${endY}px`;
     flyingCard.style.width = '64px';
     flyingCard.style.height = '100px';
     flyingCard.style.transform = 'scale(1.0) rotate(0deg)';
 
-    // 타격 완료 대기
-    await new Promise(r => setTimeout(r, 260));
+    await new Promise(r => setTimeout(r, 240));
 
-    // 🎴 바닥 촥! 타격음 & 화면 셰이크
+    // 바닥 촥! 타격음 및 진동
     if (window.goStopAudio) window.goStopAudio.playCardSlap(1.2);
     appContainer.classList.add('screen-shake');
-    setTimeout(() => appContainer.classList.remove('screen-shake'), 140);
+    setTimeout(() => appContainer.classList.remove('screen-shake'), 120);
 
     flyingCard.remove();
   }
@@ -181,12 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = createCardElement(card);
       el.addEventListener('mouseenter', () => highlightMatchesOnGround(card.month));
       el.addEventListener('mouseleave', clearGroundHighlights);
-      el.addEventListener('click', (e) => onUserCardClick(card, el));
+      el.addEventListener('click', () => onUserCardClick(card, el));
       userHandRow.appendChild(el);
     });
   }
 
-  // AI 손패 렌더링
+  // AI 손패 렌더링 (화면 상단)
   function renderAiHand() {
     aiHandRow.innerHTML = '';
     engine.aiHand.forEach(card => {
@@ -253,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       userTurnBadge.classList.remove('active');
       aiTurnBadge.classList.add('active');
-      aiSpeech.textContent = '반반이가 고민 중이다 멍멍... 🐾';
+      aiSpeech.textContent = '반반이가 칠 패를 고르는 중이다 멍멍... 🐾';
     }
   }
 
@@ -266,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1400);
   }
 
-  // 유저 카드 클릭
+  // 유저 카드 클릭 핸들러
   async function onUserCardClick(card, cardEl) {
     if (engine.currentTurn !== 'player' || engine.isGameOver || engine.isProcessing) return;
     if (window.goStopAudio) window.goStopAudio.init();
@@ -278,6 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingPlayCardId = card.id;
       showChoiceModal(groundMatches);
     } else {
+      // 1. 클릭한 손패 엘리먼트의 정확한 위치 측정
+      const originRect = cardEl.getBoundingClientRect();
+      // 2. 손패에서 즉시 숨김 (투명화)
+      cardEl.style.opacity = '0';
+      // 3. 정확한 손패 위치에서 바닥으로 날아가기 실행
+      await performCardFlight(originRect, card.month, card, false);
+      // 4. 엔진 턴 실행
       await engine.playCard(card.id);
       renderAll();
     }
@@ -289,6 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = createCardElement(c);
       el.addEventListener('click', async () => {
         choiceModal.classList.add('hidden');
+        
+        const userCardEl = userHandRow.querySelector(`.hwatu-card[data-id="${pendingPlayCardId}"]`);
+        const originRect = userCardEl ? userCardEl.getBoundingClientRect() : userHandRow.getBoundingClientRect();
+        if (userCardEl) userCardEl.style.opacity = '0';
+        
+        const cardObj = engine.playerHand.find(cd => cd.id === pendingPlayCardId);
+        if (cardObj) {
+          await performCardFlight(originRect, cardObj.month, cardObj, false);
+        }
+
         await engine.playCard(pendingPlayCardId, c.id);
         pendingPlayCardId = null;
         renderAll();
@@ -304,16 +312,18 @@ document.addEventListener('DOMContentLoaded', () => {
       showBanner(data.message);
       renderAll();
     } else if (type === 'cardPlayed') {
-      let fromEl;
-      if (data.actor === 'player') {
-        fromEl = userHandRow.querySelector(`.hwatu-card[data-id="${data.card.id}"]`) || userHandRow;
-      } else {
-        fromEl = aiHandRow.firstElementChild || aiHandRow;
+      // AI 턴일 때만 여기서 상단 AI 손패 위치로부터 비행 애니메이션 수행
+      if (data.actor === 'ai') {
+        const aiCardEl = aiHandRow.firstElementChild || aiHandRow;
+        const originRect = aiCardEl.getBoundingClientRect();
+        aiCardEl.style.opacity = '0';
+        await performCardFlight(originRect, data.card.month, data.card, true);
+        renderAll();
       }
-      await animateCardFlight(fromEl, data.card.month, data.card, data.actor === 'ai');
-      renderAll();
     } else if (type === 'deckFlipped') {
-      await animateCardFlight(centerDeck, data.card.month, data.card);
+      // 중앙 덱에서 튕겨져 나오는 비행 애니메이션
+      const originRect = centerDeck.getBoundingClientRect();
+      await performCardFlight(originRect, data.card.month, data.card, false);
       renderAll();
     } else if (type === 'turnResult') {
       if (data.logs.length > 0) {
@@ -348,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     engine.declareStop('player');
   });
 
-  // 💰 머니 정산 결과 모달
+  // 머니 정산 모달
   function showResultModal(data) {
     const isPlayerWin = data.winner === 'player';
     resultTitle.textContent = isPlayerWin ? '마스터님 완승!! 🏆' : '반반이 승리! 🐶';
@@ -388,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   });
 
-  // 판돈 설정 변경 이벤트
   selectBet.addEventListener('change', (e) => {
     const betVal = parseInt(e.target.value, 10);
     engine.setPointBet(betVal);

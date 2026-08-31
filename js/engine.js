@@ -162,8 +162,8 @@ class GoStopEngine {
     let turnLogs = [];
     let capturedThisTurn = [];
 
-    // 1단계: 손패 내리기 애니메이션 이벤트
-    if (this.onEvent) {
+    // 1단계: AI 턴일 때만 손패 비행 이벤트 발생 (플레이어는 클릭 시점에 이미 비행 완료)
+    if (actor === 'ai' && this.onEvent) {
       await this.onEvent('cardPlayed', { actor, card: playedCard });
     }
 
