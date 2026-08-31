@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>반반이 맞고 (BANBAN GO-STOP) - 정통 화투 에디션</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1.0">
+</head>
+<body>
+  <!-- GoStop Green Felt Board Container -->
+  <div class="gostop-app">
+    <!-- Header Navigation -->
+    <header class="gostop-header">
+      <div class="header-left">
+        <h1 class="logo-title">반반이<span class="gold-text">맞고</span> 🎴</h1>
+      </div>
+      <div class="header-right">
+        <button id="btnSound" class="btn-ctrl" title="사운드 토글">🔊</button>
+        <button id="btnRules" class="btn-ctrl" title="맞고 족보 가이드">📜 족보</button>
+        <button id="btnNewGame" class="btn-ctrl btn-gold" title="새 판 시작">🔄 새 판</button>
+      </div>
+    </header>
+
+    <!-- Main Table Board -->
+    <main class="board-table">
+      <!-- Top: Opponent (Banban AI) Zone -->
+      <section class="player-zone ai-zone">
+        <div class="player-profile">
+          <div class="avatar-wrap">
+            <img src="assets/banban/char_idle.jpg" alt="반반이 AI" id="aiAvatar" class="profile-avatar">
+            <span class="turn-indicator" id="aiTurnBadge">반반이 턴</span>
+          </div>
+          <div class="profile-meta">
+            <div class="name-row">
+              <span class="profile-name">반반이 (AI) 🐶</span>
+              <span class="score-badge" id="aiScore">0 점</span>
+            </div>
+            <div class="speech-box" id="aiSpeech">한판 붙자 멍멍! 🐾</div>
+          </div>
+        </div>
+
+        <!-- AI Captured Cards Area -->
+        <div class="captured-row" id="aiCapturedRow">
+          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards" id="aiGwang"></div></div>
+          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards" id="aiAnimal"></div></div>
+          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards" id="aiRibbon"></div></div>
+          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards" id="aiJunk"></div></div>
+        </div>
+
+        <!-- AI Hand (Back of cards) -->
+        <div class="hand-row ai-hand-row" id="aiHandRow"></div>
+      </section>
+
+      <!-- Center: Ground Field & Deck -->
+      <section class="ground-field">
+        <div class="ground-cards-grid" id="groundGrid">
+          <!-- 12 Month Slots Dynamically Rendered -->
+        </div>
+
+        <!-- Center Draw Deck & Status Notification -->
+        <div class="center-deck-wrap">
+          <div class="card-deck" id="centerDeck">
+            <div class="deck-card-top">🎴</div>
+            <span class="deck-count" id="deckCount">22</span>
+          </div>
+          <div class="action-banner" id="actionBanner">쪽!! 상대 피 1장 획득! 🐾</div>
+        </div>
+      </section>
+
+      <!-- Bottom: User (Master) Zone -->
+      <section class="player-zone user-zone">
+        <!-- User Hand Cards -->
+        <div class="hand-row user-hand-row" id="userHandRow">
+          <!-- Dynamically populated cards -->
+        </div>
+
+        <!-- User Captured Cards Area -->
+        <div class="captured-row" id="userCapturedRow">
+          <div class="captured-group" title="광"><span class="cap-label">광</span><div class="cap-cards" id="userGwang"></div></div>
+          <div class="captured-group" title="열끗"><span class="cap-label">열</span><div class="cap-cards" id="userAnimal"></div></div>
+          <div class="captured-group" title="띠"><span class="cap-label">띠</span><div class="cap-cards" id="userRibbon"></div></div>
+          <div class="captured-group" title="피"><span class="cap-label">피</span><div class="cap-cards" id="userJunk"></div></div>
+        </div>
+
+        <!-- User Profile Bar -->
+        <div class="player-profile user-profile">
+          <div class="avatar-wrap">
+            <img src="assets/banban/char_happy.jpg" alt="마스터님" class="profile-avatar">
+            <span class="turn-indicator active" id="userTurnBadge">내 턴</span>
+          </div>
+          <div class="profile-meta">
+            <div class="name-row">
+              <span class="profile-name">마스터님 👑</span>
+              <span class="score-badge user-score-badge" id="userScore">0 점</span>
+            </div>
+            <div class="speech-box" id="userSpeech">낼 화투패를 터치하세요! 🎴</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Go / Stop Decision Modal -->
+  <div id="goStopModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-gostop">
+      <img src="assets/banban/char_happy.jpg" alt="고스톱" class="modal-dog-img">
+      <h2 class="modal-title gold-text">7점 달성! 고? 스톱?</h2>
+      <p class="modal-desc" id="goStopDesc">현재 점수: 7점</p>
+      <div class="gostop-btn-row">
+        <button id="btnDeclareGo" class="gostop-btn btn-go">🔥 고! (GO)</button>
+        <button id="btnDeclareStop" class="gostop-btn btn-stop">🛑 스톱! (STOP)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Choice Modal (바닥에 같은 월 2장 있을 때 선택) -->
+  <div id="choiceModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-choice">
+      <h3 class="modal-title">가져갈 패를 선택하세요</h3>
+      <div class="choice-cards-row" id="choiceCardsRow"></div>
+    </div>
+  </div>
+
+  <!-- Game End Result Modal -->
+  <div id="resultModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-result">
+      <img src="assets/banban/char_happy.jpg" alt="결과" id="resultAvatar" class="modal-dog-img">
+      <h2 id="resultTitle" class="modal-title gold-text">마스터님 승리!! 🏆</h2>
+      <div class="result-details" id="resultDetails"></div>
+      <button id="btnRestartResult" class="glow-btn">한 판 더 하기 🐾</button>
+    </div>
+  </div>
+
+  <!-- Rules / Jokbo Modal -->
+  <div id="rulesModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-rules">
+      <div class="rules-header">
+        <h3>🎴 맞고 족보 & 점수 가이드</h3>
+        <button id="btnCloseRules" class="btn-close">✖</button>
+      </div>
+      <div class="rules-body">
+        <ul>
+          <li><strong>광(光)</strong>: 3광(3점, 비3광 2점) / 4광(4점) / 5광(15점)</li>
+          <li><strong>고도리</strong>: 2월, 4월, 8월 새 3마리 = 5점</li>
+          <li><strong>단(띠)</strong>: 홍단(3점), 청단(3점), 초단(3점) / 5장부터 1점</li>
+          <li><strong>열끗</strong>: 5장부터 1점 / 7장 이상 시 멍텅구리(2배)</li>
+          <li><strong>피</strong>: 10장부터 1점 (이후 1장당 +1점, 쌍피는 2장)</li>
+          <li><strong>특수 규칙</strong>: 쪽/따닥/쓸(상대 피 1장 뺏기), 뻑(3장 묶임), 피박(2배), 광박(2배)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/cards.js?v=1.0"></script>
+  <script src="js/audio.js?v=1.0"></script>
+  <script src="js/engine.js?v=1.0"></script>
+  <script src="js/app.js?v=1.0"></script>
+</body>
+</html>
