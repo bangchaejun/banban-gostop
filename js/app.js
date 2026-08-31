@@ -1,5 +1,5 @@
 /**
- * BANBAN MATGO - Commercial Grade Authentic Timing, Viewport Flight & Grand FX Engine
+ * BANBAN MATGO - Realistic 3D Card Flip, Smooth Choreography & Overlap Physics Engine
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     highlighted.forEach(el => el.classList.remove('match-highlight'));
   }
 
-  // 💥 바닥 슬램 충격파 링 생성 함수
+  // 💥 바닥 슬램 충격파 링 생성
   function createSlamShockwave(x, y) {
     const wave = document.createElement('div');
     wave.className = 'slam-shockwave';
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => wave.remove(), 400);
   }
 
-  // 🌟 거대 붓글씨 임팩트 배너 (쪽, 따닥, 뻑, 쓸 등)
+  // 🌟 거대 붓글씨 임팩트 배너
   function triggerGrandEffect(text) {
     const banner = document.createElement('div');
     banner.className = 'grand-effect-banner';
@@ -129,10 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => banner.remove(), 1300);
   }
 
-  // 🚀 0.1px 오차 없는 뷰포트 절대좌표 비행 시스템 (3D 포물선 & 바닥 카드 포개짐 물리 연출)
-  async function performCardFlight(originType, targetMonth, card, customOriginRect = null) {
-    if (!flyLayer) return;
-
+  // 🚀 1. 손패 비행 (손목 스냅 3D 아크 & 포개짐 슬램)
+  async function performHandCardFlight(originType, targetMonth, card, customOriginRect = null) {
     const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
     const existingCards = slotEl.querySelectorAll('.hwatu-card');
     const destRect = slotEl.getBoundingClientRect();
@@ -142,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (originType === 'player') {
       originRect = customOriginRect || userHandRow.getBoundingClientRect();
-    } else if (originType === 'ai') {
+    } else {
       const aiCards = aiHandRow.querySelectorAll('.hwatu-card');
       if (aiCards.length > 0) {
         originRect = aiCards[Math.floor(aiCards.length / 2)].getBoundingClientRect();
@@ -150,14 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
         originRect = aiAvatar.getBoundingClientRect();
       }
       isBack = true;
-    } else if (originType === 'deck') {
-      originRect = centerDeck.getBoundingClientRect();
     }
 
     const flyingCard = createCardElement(card, isBack);
     flyingCard.classList.add('flying-card-anim');
 
-    // 1단계: 출발지에서 손을 들어 올린 3D 붕 뜸 (Elevation Scale 1.35)
+    // 출발 위치에서 손을 높이 들어 올린 3D 붕 뜸
     flyingCard.style.position = 'fixed';
     flyingCard.style.left = `${originRect.left}px`;
     flyingCard.style.top = `${originRect.top}px`;
@@ -166,9 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
     flyingCard.style.transform = isBack ? 'scale(1.2) rotate(16deg) translateY(-25px)' : 'scale(1.35) rotate(-14deg) translateY(-35px)';
     flyingCard.style.zIndex = '10002';
     flyingCard.style.transition = 'none';
-    flyLayer.appendChild(flyingCard);
+    document.body.appendChild(flyingCard);
 
-    // 포개짐 오프셋 계산 (바닥에 기존 카드가 있으면 그 위에 비스듬히 착지)
+    // 포개짐 오프셋 계산
     const overlapCount = existingCards.length;
     const offsetX = overlapCount > 0 ? (overlapCount * 10) : 0;
     const offsetY = overlapCount > 0 ? (overlapCount * 12) : 0;
@@ -177,22 +173,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetX = destRect.left + 2 + offsetX;
     const targetY = destRect.top + 2 + offsetY;
 
-    // 2단계: 0.46초 동안 손목 스냅을 타고 포물선을 그리며 바닥 카드 위로 촥! 꽂히기
     await new Promise(r => requestAnimationFrame(r));
-    flyingCard.style.transition = 'all 0.46s cubic-bezier(0.12, 0.88, 0.28, 1.05)';
+    flyingCard.style.transition = 'all 0.45s cubic-bezier(0.12, 0.88, 0.28, 1.05)';
     flyingCard.style.left = `${targetX}px`;
     flyingCard.style.top = `${targetY}px`;
     flyingCard.style.width = '64px';
     flyingCard.style.height = '100px';
     flyingCard.style.transform = `scale(1.0) rotate(${targetRotate}deg) translateY(0px)`;
 
-    await new Promise(r => setTimeout(r, 460));
+    await new Promise(r => setTimeout(r, 450));
 
-    // 🎴 바닥 착지 순간: 바닥 기존 카드 반동(Jolt) + 슬램 사운드 + 충격파 링 + 화면 진동
+    // 착지 순간 바닥 카드 반동 + 슬램 사운드 + 충격파
     if (existingCards.length > 0) {
       existingCards.forEach(c => {
         c.classList.remove('card-impact-jolt');
-        void c.offsetWidth; // Reflow
+        void c.offsetWidth;
         c.classList.add('card-impact-jolt');
       });
     }
@@ -206,6 +201,105 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => appContainer.classList.remove('screen-shake'), 150);
 
     flyingCard.remove();
+  }
+
+  // 🎴 2. 중앙 덱 3D 뒤집기(Card Flip) 비행 연출
+  async function performDeckFlipFlight(targetMonth, card) {
+    const originRect = centerDeck.getBoundingClientRect();
+    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${targetMonth}"]`) || groundGrid;
+    const existingCards = slotEl.querySelectorAll('.hwatu-card');
+    const destRect = slotEl.getBoundingClientRect();
+
+    // 3D Flip 컨테이너 생성
+    const flipWrap = document.createElement('div');
+    flipWrap.className = 'flip-card-3d-wrap';
+    flipWrap.style.left = `${originRect.left}px`;
+    flipWrap.style.top = `${originRect.top}px`;
+    flipWrap.style.transform = 'scale(1.3) translateY(-30px)';
+
+    const flipInner = document.createElement('div');
+    flipInner.className = 'flip-card-inner';
+    flipInner.style.transform = 'rotateY(180deg)'; // 시작은 뒷면!
+
+    const cardBack = document.createElement('div');
+    cardBack.className = 'flip-card-back';
+    cardBack.innerHTML = '🎴';
+
+    const cardFront = document.createElement('div');
+    cardFront.className = 'flip-card-front';
+    const realCardEl = createCardElement(card, false);
+    cardFront.appendChild(realCardEl);
+
+    flipInner.appendChild(cardBack);
+    flipInner.appendChild(cardFront);
+    flipWrap.appendChild(flipInner);
+    document.body.appendChild(flipWrap);
+
+    // 포개짐 오프셋 계산
+    const overlapCount = existingCards.length;
+    const offsetX = overlapCount > 0 ? (overlapCount * 10) : 0;
+    const offsetY = overlapCount > 0 ? (overlapCount * 12) : 0;
+    const targetRotate = overlapCount > 0 ? (overlapCount % 2 === 0 ? 6 : -6) : 0;
+
+    const targetX = destRect.left + 2 + offsetX;
+    const targetY = destRect.top + 2 + offsetY;
+
+    await new Promise(r => requestAnimationFrame(r));
+    // 공중으로 떠오르며 3D 뒤집어지기 실행!
+    flipWrap.style.transition = 'all 0.52s cubic-bezier(0.15, 0.85, 0.35, 1.1)';
+    flipWrap.style.left = `${targetX}px`;
+    flipWrap.style.top = `${targetY}px`;
+    flipWrap.style.transform = `scale(1.0) rotate(${targetRotate}deg) translateY(0px)`;
+    flipInner.style.transform = 'rotateY(0deg)'; // 앞면으로 촤르륵 까짐!
+
+    await new Promise(r => setTimeout(r, 520));
+
+    // 착지 순간
+    if (existingCards.length > 0) {
+      existingCards.forEach(c => {
+        c.classList.remove('card-impact-jolt');
+        void c.offsetWidth;
+        c.classList.add('card-impact-jolt');
+      });
+    }
+
+    const centerX = targetX + 32;
+    const centerY = targetY + 50;
+    createSlamShockwave(centerX, centerY);
+
+    if (window.goStopAudio) window.goStopAudio.playCardSlap(1.4);
+    appContainer.classList.add('screen-shake');
+    setTimeout(() => appContainer.classList.remove('screen-shake'), 150);
+
+    flipWrap.remove();
+  }
+
+  // 📥 3. 매칭된 패 수거(먹기) 애니메이션
+  async function performCaptureAnimation(actor, month, cards) {
+    if (!cards || cards.length === 0) return;
+
+    const slotEl = groundGrid.querySelector(`.ground-slot[data-month="${month}"]`);
+    if (!slotEl) return;
+    const fromRect = slotEl.getBoundingClientRect();
+
+    const targetRow = actor === 'player' ? document.getElementById('userCapturedRow') : document.getElementById('aiCapturedRow');
+    const toRect = targetRow.getBoundingClientRect();
+
+    const animCard = createCardElement(cards[0], false);
+    animCard.className = 'hwatu-card absorbing-card-anim';
+    animCard.style.left = `${fromRect.left}px`;
+    animCard.style.top = `${fromRect.top}px`;
+    animCard.style.transform = 'scale(1.0)';
+    document.body.appendChild(animCard);
+
+    await new Promise(r => requestAnimationFrame(r));
+    animCard.style.left = `${toRect.left + 20}px`;
+    animCard.style.top = `${toRect.top + 10}px`;
+    animCard.style.transform = 'scale(0.65) rotate(15deg)';
+    animCard.style.opacity = '0.3';
+
+    await new Promise(r => setTimeout(r, 360));
+    animCard.remove();
   }
 
   // 전체 화면 렌더링
@@ -231,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // AI 손패 렌더링 (화면 상단)
+  // AI 손패 렌더링
   function renderAiHand() {
     aiHandRow.innerHTML = '';
     engine.aiHand.forEach(card => {
@@ -324,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const originRect = cardEl.getBoundingClientRect();
       cardEl.style.opacity = '0';
-      await performCardFlight('player', card.month, card, originRect);
+      await performHandCardFlight('player', card.month, card, originRect);
       await engine.playCard(card.id);
       renderAll();
     }
@@ -343,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const cardObj = engine.playerHand.find(cd => cd.id === pendingPlayCardId);
         if (cardObj) {
-          await performCardFlight('player', cardObj.month, cardObj, originRect);
+          await performHandCardFlight('player', cardObj.month, cardObj, originRect);
         }
 
         await engine.playCard(pendingPlayCardId, c.id);
@@ -366,11 +460,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (type === 'cardPlayed') {
       if (data.actor === 'ai') {
         aiSpeech.textContent = `${data.card.name} 낸다 멍멍! 🐾`;
-        await performCardFlight('ai', data.card.month, data.card);
+        await performHandCardFlight('ai', data.card.month, data.card);
         renderAll();
       }
     } else if (type === 'deckFlipped') {
-      await performCardFlight('deck', data.card.month, data.card);
+      // 🌟 중앙 덱 3D 뒤집기(Card Flip) 비행 실행!
+      await performDeckFlipFlight(data.card.month, data.card);
+      renderAll();
+    } else if (type === 'cardsCaptured') {
+      // 🌟 매칭된 패 수거(먹기) 비행 실행!
+      await performCaptureAnimation(data.actor, data.month, data.cards);
       renderAll();
     } else if (type === 'turnResult') {
       if (data.logs.length > 0) {

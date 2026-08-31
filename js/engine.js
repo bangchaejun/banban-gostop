@@ -269,8 +269,15 @@ class GoStopEngine {
       }
     });
 
-    if (capturedThisTurn.length > 0 && window.goStopAudio) {
-      window.goStopAudio.playCardCollect();
+    if (capturedThisTurn.length > 0) {
+      if (this.onEvent) {
+        await this.onEvent('cardsCaptured', { actor, month, cards: capturedThisTurn });
+      }
+      if (window.goStopAudio) {
+        window.goStopAudio.playCardCollect();
+      }
+      // 🌟 패 수거 후 잠시 확인 딜레이 (350ms)
+      await new Promise(r => setTimeout(r, 350));
     }
 
     this.calculateScore('player');
