@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let pendingPlayCardId = null;
 
-  // 🎴 정통 화투패 DOM 요소 생성 (정통 화투 SVG 그래픽 탑재)
+  // 🎴 정통 화투패 DOM 요소 생성 (실물 정통 화투 카드 전면 렌더링)
   function createCardElement(card, isBack = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `hwatu-card ${isBack ? 'card-back' : ''}`;
@@ -64,10 +64,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return cardEl;
     }
 
-    // 정통 화투 SVG 그래픽 렌더링
-    if (window.getHwatuSvg) {
-      cardEl.innerHTML = window.getHwatuSvg(card);
+    // 광 뱃지
+    let badgeHtml = '';
+    if (card.type === 'gwang') {
+      badgeHtml = `<div class="card-badge-gwang">光</div>`;
+    } else if (card.type === 'ribbon') {
+      const cls = card.ribbonType === 'hong' ? 'badge-hong' : (card.ribbonType === 'cheong' ? 'badge-cheong' : 'badge-cho');
+      const text = card.ribbonType === 'hong' ? '홍단' : (card.ribbonType === 'cheong' ? '청단' : '초단');
+      badgeHtml = `<div class="card-badge-dan ${cls}">${text}</div>`;
+    } else if (card.isGodori) {
+      badgeHtml = `<div class="card-badge-dan badge-godori">고도리</div>`;
+    } else if (card.type === 'double') {
+      badgeHtml = `<div class="card-badge-dan badge-double">쌍피</div>`;
     }
+
+    const monthLabel = card.month === 0 ? '보너스' : `${card.month}월`;
+
+    cardEl.innerHTML = `
+      ${badgeHtml}
+      <img src="${card.img}" alt="${card.name}" class="hwatu-real-img">
+      <span class="card-month-tag">${monthLabel}</span>
+    `;
 
     return cardEl;
   }
